@@ -128,7 +128,14 @@ void BulkApply(google::cloud::bigtable::Table table, int argc, char* argv[]) {
           "fam", "col3", "value4-" + std::to_string(i)));
       bulk.emplace_back(std::move(mutation));
     }
-    table.BulkApply(std::move(bulk));
+    auto failures = table.BulkApply(std::move(bulk));
+    if (!failures.empty()) {
+      for (auto f : failures) {
+        google::cloud::Status status = f.gcstatus();
+        std::cerr << "Operation " << f.original_index() << " failed with "
+                  << status.message() << "]\n";
+      }
+    }
   }
   //! [bulk apply]
   (std::move(table));

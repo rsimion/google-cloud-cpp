@@ -73,13 +73,21 @@ future<void> Table::AsyncApply(SingleRowMutation mut, CompletionQueue& cq) {
   return final;
 }
 
-void Table::BulkApply(BulkMutation mut) {
+std::vector<FailedMutation> Table::BulkApply(BulkMutation mut) {
+  size_t mut_size = mut.size();
   grpc::Status status;
   std::vector<FailedMutation> failures =
       impl_.BulkApply(std::move(mut), status);
   if (!status.ok()) {
-    ReportPermanentFailures(status.error_message().c_str(), status, failures);
+    for (size_t i = 0; i < mut_size; ++i) {
+      google::cloud::Status f_status =
+          bigtable::internal::MakeStatusFromRpcError(status);
+      std::string row_key = "key-bulk-apply" + std::to_string(i);
+      SingleRowMutation srm(row_key);
+      failures.emplace_back(FailedMutation(srm, f_status, static_cast<int>(i)));
+    }
   }
+  return failures;
 }
 
 future<void> Table::AsyncBulkApply(BulkMutation mut, CompletionQueue& cq) {
