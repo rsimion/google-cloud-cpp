@@ -228,8 +228,7 @@ class Table {
    *     row can change (or create) multiple cells, across different columns and
    *     column families.
    *
-   * @return a list of failed mutations
-   *     handle the failed mutations.
+   * @return a list of failed mutations   *     
    *
    * @par Example
    * @snippet data_snippets.cc bulk apply
